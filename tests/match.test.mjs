@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {match} from '../lib/match.ts';
+const job={id:'j',title:'Software Engineer',company:'Acme',location:'New York',description:'Build software with Python and SQL. Salary $100,000 - $140,000.',url:'https://example.org',source:'test',fetchedAt:'2026-11-13'};
+const p={role:'Software',skills:'Python, SQL',location:'New York',level:'Early career',excluded:''};
+test('known fit retains source evidence and salary',()=>{const r=match(job,p);assert.equal(r.tier,'Strong');assert.deepEqual(r.hits,['python','sql']);assert.ok(r.evidence[0].quote.includes('Python'));});
+test('missing salary cannot be Strong',()=>assert.equal(match({...job,description:'Python SQL'},p).tier,'Questionable'));
+test('title seniority and location concern are explicit',()=>{const r=match({...job,title:'Staff Software Engineer',location:'London'},p);assert.equal(r.tier,'Stretch');assert.ok(r.concerns.some(c=>c.includes('senior')));assert.ok(r.concerns.some(c=>c.includes('location')))});
+test('company ledger and skill boundaries',()=>{assert.equal(match(job,{...p,excluded:'acme'}).excluded,true);assert.deepEqual(match({...job,description:'JavaScript only'}, {...p,skills:'Java'}).hits,[])});
+test('unknown sponsorship remains unknown',()=>assert.ok(match(job,p).concerns.some(c=>c.includes('not been verified'))));
